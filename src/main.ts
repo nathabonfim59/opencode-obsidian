@@ -80,6 +80,13 @@ export default class OpenCode extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+
+	async testConnection(): Promise<boolean> {
+		return true;
+	}
+
+	updateStatusBar(): void {
+	}
 }
 
 class OpenCodeModal extends Modal {
