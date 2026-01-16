@@ -1,4 +1,5 @@
-import tseslint from 'typescript-eslint'import esbuildSvelte from 'esbuild-svelte';
+import tseslint from 'typescript-eslint';
+import esbuildSvelte from 'esbuild-svelte';
 import { sveltePreprocess } from 'svelte-preprocess';;
 import obsidianmd from "eslint-plugin-obsidianmd";
 import globals from "globals";

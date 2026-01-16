@@ -1,5 +1,5 @@
 import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
-import {DEFAULT_SETTINGS, OpenCodeSettings, SampleSettingTab} from "./settings";
+import {DEFAULT_SETTINGS, OpenCodeSettings, OpenCodeSettingTab} from "./settings";
 
 // Remember to rename these classes and interfaces!
 
@@ -24,7 +24,7 @@ export default class OpenCode extends Plugin {
 			id: 'open-modal-simple',
 			name: 'Open modal (simple)',
 			callback: () => {
-				new SampleModal(this.app).open();
+				new OpenCodeModal(this.app).open();
 			}
 		});
 		// This adds an editor command that can perform some operation on the current editor instance
@@ -46,7 +46,7 @@ export default class OpenCode extends Plugin {
 					// If checking is true, we're simply "checking" if the command can be run.
 					// If checking is false, then we want to actually perform the operation.
 					if (!checking) {
-						new SampleModal(this.app).open();
+						new OpenCodeModal(this.app).open();
 					}
 
 					// This command will only show up in Command Palette when the check function returns true
@@ -57,7 +57,7 @@ export default class OpenCode extends Plugin {
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new OpenCodeSettingTab(this.app, this));
 
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
@@ -66,7 +66,7 @@ export default class OpenCode extends Plugin {
 		});
 
 		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		
 
 	}
 
@@ -82,7 +82,7 @@ export default class OpenCode extends Plugin {
 	}
 }
 
-class SampleModal extends Modal {
+class OpenCodeModal extends Modal {
 	constructor(app: App) {
 		super(app);
 	}

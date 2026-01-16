@@ -9,7 +9,7 @@ export const DEFAULT_SETTINGS: OpenCodeSettings = {
 	mySetting: 'default'
 }
 
-export class SampleSettingTab extends PluginSettingTab {
+export class OpenCodeSettingTab extends PluginSettingTab {
 	plugin: OpenCode;
 
 	constructor(app: App, plugin: OpenCode) {
