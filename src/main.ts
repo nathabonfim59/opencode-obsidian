@@ -1,12 +1,14 @@
 import { Notice, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS, OpenCodeSettings, OpenCodeSettingTab } from "./settings";
-import { getDarkLogo, getLightLogo } from "./utils";
+import { getDarkLogo, getLightLogo, DARK_ICON_SVG, LIGHT_ICON_SVG } from "./utils";
+import { OpenCodeView, VIEW_TYPE_OPENCODE } from "./view";
 import { RequestUrlParam } from 'obsidian';
 import { requestUrl } from 'obsidian';
 
 export default class OpenCode extends Plugin {
 	settings: OpenCodeSettings;
 	statusBarItemEl: HTMLElement | null = null;
+	ribbonIconEl: HTMLElement | null = null;
 	connectionStatus: 'checking' | 'connected' | 'disconnected' = 'checking';
 	healthCheckInterval: number | null = null;
 	static readonly HEALTH_CHECK_INTERVAL_MS = 30000;
@@ -15,10 +17,51 @@ export default class OpenCode extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
+		this.registerView(VIEW_TYPE_OPENCODE, (leaf) => new OpenCodeView(leaf, this));
+		this.addRibbonIcon('opencode', 'Opencode', () => {
+			void this.activateView();
+		});
+		this.setupRibbonIcon();
 		this.setupStatusBar();
 		this.startHealthCheck();
 
 		this.addSettingTab(new OpenCodeSettingTab(this.app, this));
+	}
+
+	setupRibbonIcon() {
+		const ribbonIconEls = Array.from(document.querySelectorAll('.workspace-ribbon-action'));
+		let ribbonIconEl: HTMLElement | null = null;
+
+		for (const el of ribbonIconEls) {
+			if (el.getAttribute('aria-label') === 'Opencode') {
+				ribbonIconEl = el as HTMLElement;
+				break;
+			}
+		}
+
+		if (!ribbonIconEl) return;
+
+		this.ribbonIconEl = ribbonIconEl;
+		this.updateRibbonIcon();
+
+		const observer = new MutationObserver(() => {
+			this.updateRibbonIcon();
+		});
+		observer.observe(document.body, {
+			attributes: true,
+			attributeFilter: ['class']
+		});
+		this.register(() => observer.disconnect());
+	}
+
+	updateRibbonIcon() {
+		if (!this.ribbonIconEl) return;
+
+		const isDark = document.body.classList.contains('theme-dark');
+		const svgElement = this.ribbonIconEl.querySelector('svg');
+		if (svgElement) {
+			svgElement.innerHTML = isDark ? DARK_ICON_SVG : LIGHT_ICON_SVG;
+		}
 	}
 
 	onunload() {
@@ -153,6 +196,22 @@ export default class OpenCode extends Plugin {
 		if (this.healthCheckInterval) {
 			clearInterval(this.healthCheckInterval);
 			this.healthCheckInterval = null;
+		}
+	}
+
+	async activateView() {
+		const { workspace } = this.app;
+
+		const leaves = workspace.getLeavesOfType(VIEW_TYPE_OPENCODE);
+		if (leaves.length > 0 && leaves[0]) {
+			void workspace.revealLeaf(leaves[0]);
+			return;
+		}
+
+		const leaf = workspace.getRightLeaf(false);
+		if (leaf) {
+			await leaf.setViewState({ type: VIEW_TYPE_OPENCODE, active: true });
+			void workspace.revealLeaf(leaf);
 		}
 	}
 }
