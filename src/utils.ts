@@ -8,3 +8,7 @@ export function getDarkLogo(): string {
 export function getLightLogo(): string {
   return `url('data:image/svg+xml;base64,${LIGHT_LOGO_BASE64}')`;
 }
+
+export const DARK_ICON_SVG = `<path d="M75 100H25V50H75V100Z" fill="#4B4646"/><path d="M75 25H25V100H75V25ZM100 100H0V0H100V100Z" fill="#F1ECEC"/>`;
+
+export const LIGHT_ICON_SVG = `<path d="M75 100H25V50H75V100Z" fill="#CFCECD"/><path d="M75 25H25V100H75V25ZM100 100H0V0H100V100Z" fill="#211E1E"/>`;
