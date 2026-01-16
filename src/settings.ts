@@ -29,8 +29,10 @@ export class OpenCodeSettingTab extends PluginSettingTab {
 
   new Setting(containerEl)
     .setName('Server host')
+	// eslint-disable-next-line obsidianmd/ui/sentence-case
     .setDesc('OpenCode server hostname or IP address')
     .addText(text => text
+	   // eslint-disable-next-line obsidianmd/ui/sentence-case
       .setPlaceholder('localhost')
       .setValue(this.plugin.settings.serverHost)
       .onChange(async (value) => {
@@ -42,6 +44,7 @@ export class OpenCodeSettingTab extends PluginSettingTab {
 
   new Setting(containerEl)
     .setName('Server port')
+	// eslint-disable-next-line obsidianmd/ui/sentence-case
     .setDesc('OpenCode server port')
     .addText(text => text
       .setPlaceholder('4096')
