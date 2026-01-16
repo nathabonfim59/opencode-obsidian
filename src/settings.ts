@@ -1,18 +1,18 @@
 import {App, PluginSettingTab, Setting} from "obsidian";
-import MyPlugin from "./main";
+import OpenCode from "./main";
 
-export interface MyPluginSettings {
+export interface OpenCodeSettings {
 	mySetting: string;
 }
 
-export const DEFAULT_SETTINGS: MyPluginSettings = {
+export const DEFAULT_SETTINGS: OpenCodeSettings = {
 	mySetting: 'default'
 }
 
 export class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+	plugin: OpenCode;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: OpenCode) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
