@@ -1,76 +1,26 @@
-import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
-import {DEFAULT_SETTINGS, OpenCodeSettings, OpenCodeSettingTab} from "./settings";
-
-// Remember to rename these classes and interfaces!
+import { App, Notice, Plugin } from 'obsidian';
+import { DEFAULT_SETTINGS, OpenCodeSettings, OpenCodeSettingTab } from "./settings";
+import { getDarkLogo, getLightLogo } from "./utils";
 
 export default class OpenCode extends Plugin {
 	settings: OpenCodeSettings;
+	statusBarItemEl: HTMLElement | null = null;
+	connectionStatus: 'checking' | 'connected' | 'disconnected' = 'checking';
+	healthCheckInterval: number | null = null;
+	static readonly HEALTH_CHECK_INTERVAL_MS = 30000;
+	static readonly CONNECTION_TIMEOUT_MS = 5000;
 
 	async onload() {
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
+		this.setupStatusBar();
+		this.startHealthCheck();
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status bar text');
-
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
-			callback: () => {
-				new OpenCodeModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'replace-selected',
-			name: 'Replace selected content',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				editor.replaceSelection('Sample editor command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-modal-complex',
-			name: 'Open modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new OpenCodeModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-				return false;
-			}
-		});
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new OpenCodeSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			new Notice("Click");
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		
-
 	}
 
 	onunload() {
+		this.stopHealthCheck();
 	}
 
 	async loadSettings() {
@@ -81,26 +31,128 @@ export default class OpenCode extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	getServerUrl(): string {
+		return `${this.settings.serverProtocol}://${this.settings.serverHost}:${this.settings.serverPort}`;
+	}
+
 	async testConnection(): Promise<boolean> {
-		return true;
+		const password = this.settings.serverPasswordSecretName
+			? this.app.secretStorage.getSecret(this.settings.serverPasswordSecretName)
+			: null;
+
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), OpenCode.CONNECTION_TIMEOUT_MS);
+
+		try {
+			const headers: HeadersInit = {};
+			if (password) {
+				headers['Authorization'] = `Basic ${btoa('opencode:' + password)}`;
+			}
+
+			const response = await fetch(`${this.getServerUrl()}/global/health`, {
+				method: 'GET',
+				headers,
+				signal: controller.signal,
+			});
+
+			clearTimeout(timeoutId);
+
+			if (response.ok) {
+				this.connectionStatus = 'connected';
+				this.updateStatusBar();
+				return true;
+			} else {
+				this.connectionStatus = 'disconnected';
+				this.updateStatusBar();
+				return false;
+			}
+		} catch (error) {
+			clearTimeout(timeoutId);
+			this.connectionStatus = 'disconnected';
+			this.updateStatusBar();
+			return false;
+		}
+	}
+
+	setupStatusBar(): void {
+		this.statusBarItemEl = this.addStatusBarItem();
+		this.updateStatusBar();
+
+		this.statusBarItemEl.addEventListener('click', () => {
+			new Notice('OpenCode Settings: ' + this.getServerUrl());
+		});
 	}
 
 	updateStatusBar(): void {
-	}
-}
+		if (!this.statusBarItemEl) return;
 
-class OpenCodeModal extends Modal {
-	constructor(app: App) {
-		super(app);
+		const isDark = document.body.classList.contains('theme-dark');
+		const logoUrl = isDark ? getDarkLogo() : getLightLogo();
+
+		let statusDot = '';
+		let tooltipText = 'OpenCode - ';
+		let isPulsing = false;
+
+		switch (this.connectionStatus) {
+			case 'checking':
+				statusDot = `<span style="color: var(--text-error); animation: pulse 1s infinite;">●</span>`;
+				tooltipText += 'Checking...';
+				isPulsing = true;
+				break;
+			case 'connected':
+				statusDot = `<span style="color: var(--text-success);">●</span>`;
+				tooltipText += `Connected to ${this.settings.serverProtocol}://${this.settings.serverHost}:${this.settings.serverPort}`;
+				break;
+			case 'disconnected':
+				statusDot = `<span style="color: var(--text-error);">●</span>`;
+				tooltipText += `Disconnected from ${this.settings.serverProtocol}://${this.settings.serverHost}:${this.settings.serverPort}`;
+				break;
+		}
+
+		const pulseAnimation = isPulsing ? `
+			<style>
+				@keyframes pulse {
+					0%, 100% { opacity: 1; }
+					50% { opacity: 0.3; }
+				}
+			</style>
+		` : '';
+
+		this.statusBarItemEl.innerHTML = `
+			${pulseAnimation}
+			<span style="display: flex; align-items: center; gap: 6px; cursor: pointer;" aria-label="${tooltipText}" data-tooltip-position="top">
+				<span style="
+					width: 12px;
+					height: 16px;
+					display: flex;
+					align-items: center;
+					background-image: ${logoUrl};
+					background-size: contain;
+					background-repeat: no-repeat;
+					background-position: center;
+				"></span>
+				${statusDot}
+			</span>
+		`;
+
+		console.log(logoUrl);
 	}
 
-	onOpen() {
-		let {contentEl} = this;
-		contentEl.setText('Woah!');
+	startHealthCheck(): void {
+		this.connectionStatus = 'checking';
+		this.updateStatusBar();
+
+		this.testConnection();
+
+		this.healthCheckInterval = window.setInterval(async () => {
+			await this.testConnection();
+		}, OpenCode.HEALTH_CHECK_INTERVAL_MS);
 	}
 
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
+	stopHealthCheck(): void {
+		if (this.healthCheckInterval) {
+			clearInterval(this.healthCheckInterval);
+			this.healthCheckInterval = null;
+		}
 	}
 }
