@@ -13,7 +13,8 @@
 		"ci": "act -j build"
 	},
 	"keywords": [],
-	"license": "0-BSD",
+	"author": "Nathanael Bonfim",
+	"license": "MIT",
 	"devDependencies": {
 		"@types/node": "^16.11.6",
 		"esbuild": "0.25.5",
