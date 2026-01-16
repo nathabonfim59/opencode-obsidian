@@ -1,8 +1,9 @@
-# Obsidian community plugin
+# OpenCode Obsidian Client
 
 ## Project overview
 
 - Target: Obsidian Community Plugin (TypeScript → bundled JavaScript).
+- Purpose: OpenCode client for Obsidian. OpenCode is a server that can be plugged into various frontends; this plugin provides an Obsidian interface.
 - Entry point: `main.ts` compiled to `main.js` and loaded by Obsidian.
 - Required release artifacts: `main.js`, `manifest.json`, and optional `styles.css`.
 
