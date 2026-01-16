@@ -33,6 +33,19 @@
 	animation: opencode-pulse 1s infinite;
 }
 
+.opencode-view-container {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.opencode-iframe {
+	width: 100%;
+	height: 100%;
+	border: none;
+	display: block;
+}
+
 /*
 
 This CSS file will be included with your plugin, and
