@@ -1,6 +1,8 @@
-import { App, Notice, Plugin } from 'obsidian';
+import { App, Notice, Plugin, request } from 'obsidian';
 import { DEFAULT_SETTINGS, OpenCodeSettings, OpenCodeSettingTab } from "./settings";
 import { getDarkLogo, getLightLogo } from "./utils";
+import { RequestUrlParam } from 'obsidian';
+import { requestUrl } from 'obsidian';
 
 export default class OpenCode extends Plugin {
 	settings: OpenCodeSettings;
@@ -49,15 +51,17 @@ export default class OpenCode extends Plugin {
 				headers['Authorization'] = `Basic ${btoa('opencode:' + password)}`;
 			}
 
-			const response = await fetch(`${this.getServerUrl()}/global/health`, {
+			let requestParams: RequestUrlParam = {
+				url: `${this.getServerUrl()}/global/health`,
 				method: 'GET',
 				headers,
-				signal: controller.signal,
-			});
+			}
+
+			const response = await requestUrl(requestParams);
 
 			clearTimeout(timeoutId);
 
-			if (response.ok) {
+			if (response.status == 200) {
 				this.connectionStatus = 'connected';
 				this.updateStatusBar();
 				return true;
