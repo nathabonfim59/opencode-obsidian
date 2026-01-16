@@ -1,3 +1,38 @@
+@keyframes opencode-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.3; }
+}
+
+.opencode-status-container {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+}
+
+.opencode-logo {
+	width: 12px;
+	height: 16px;
+	display: flex;
+	align-items: center;
+	background-image: var(--opencode-logo-image);
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+
+.opencode-status-dot {
+	color: var(--text-success);
+}
+
+.opencode-status-dot.error {
+	color: var(--text-error);
+}
+
+.opencode-status-dot.pulsing {
+	animation: opencode-pulse 1s infinite;
+}
+
 /*
 
 This CSS file will be included with your plugin, and

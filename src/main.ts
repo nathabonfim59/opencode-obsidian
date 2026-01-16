@@ -1,4 +1,4 @@
-import { App, Notice, Plugin, request } from 'obsidian';
+import { Notice, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS, OpenCodeSettings, OpenCodeSettingTab } from "./settings";
 import { getDarkLogo, getLightLogo } from "./utils";
 import { RequestUrlParam } from 'obsidian';
@@ -70,7 +70,7 @@ export default class OpenCode extends Plugin {
 				this.updateStatusBar();
 				return false;
 			}
-		} catch (error) {
+		} catch {
 			clearTimeout(timeoutId);
 			this.connectionStatus = 'disconnected';
 			this.updateStatusBar();
@@ -93,63 +93,59 @@ export default class OpenCode extends Plugin {
 		const isDark = document.body.classList.contains('theme-dark');
 		const logoUrl = isDark ? getDarkLogo() : getLightLogo();
 
-		let statusDot = '';
 		let tooltipText = 'OpenCode - ';
 		let isPulsing = false;
+		let isError = false;
 
 		switch (this.connectionStatus) {
 			case 'checking':
-				statusDot = `<span style="color: var(--text-error); animation: pulse 1s infinite;">●</span>`;
 				tooltipText += 'Checking...';
 				isPulsing = true;
+				isError = true;
 				break;
 			case 'connected':
-				statusDot = `<span style="color: var(--text-success);">●</span>`;
 				tooltipText += `Connected to ${this.settings.serverProtocol}://${this.settings.serverHost}:${this.settings.serverPort}`;
 				break;
 			case 'disconnected':
-				statusDot = `<span style="color: var(--text-error);">●</span>`;
 				tooltipText += `Disconnected from ${this.settings.serverProtocol}://${this.settings.serverHost}:${this.settings.serverPort}`;
+				isError = true;
 				break;
 		}
 
-		const pulseAnimation = isPulsing ? `
-			<style>
-				@keyframes pulse {
-					0%, 100% { opacity: 1; }
-					50% { opacity: 0.3; }
-				}
-			</style>
-		` : '';
+		this.statusBarItemEl.empty();
 
-		this.statusBarItemEl.innerHTML = `
-			${pulseAnimation}
-			<span style="display: flex; align-items: center; gap: 6px; cursor: pointer;" aria-label="${tooltipText}" data-tooltip-position="top">
-				<span style="
-					width: 12px;
-					height: 16px;
-					display: flex;
-					align-items: center;
-					background-image: ${logoUrl};
-					background-size: contain;
-					background-repeat: no-repeat;
-					background-position: center;
-				"></span>
-				${statusDot}
-			</span>
-		`;
+		const containerEl = document.createElement('span');
+		containerEl.classList.add('opencode-status-container');
+		containerEl.ariaLabel = tooltipText;
+		containerEl.setAttribute('data-tooltip-position', 'top');
 
-		console.log(logoUrl);
+		const logoEl = document.createElement('span');
+		logoEl.classList.add('opencode-logo');
+		logoEl.style.setProperty('--opencode-logo-image', logoUrl);
+
+		const statusDotEl = document.createElement('span');
+		statusDotEl.textContent = '●';
+		statusDotEl.classList.add('opencode-status-dot');
+		if (isError) {
+			statusDotEl.classList.add('error');
+		}
+		if (isPulsing) {
+			statusDotEl.classList.add('pulsing');
+		}
+
+		containerEl.appendChild(logoEl);
+		containerEl.appendChild(statusDotEl);
+		this.statusBarItemEl.appendChild(containerEl);
 	}
 
 	startHealthCheck(): void {
 		this.connectionStatus = 'checking';
 		this.updateStatusBar();
 
-		this.testConnection();
+		void this.testConnection();
 
-		this.healthCheckInterval = window.setInterval(async () => {
-			await this.testConnection();
+		this.healthCheckInterval = window.setInterval(() => {
+			void this.testConnection();
 		}, OpenCode.HEALTH_CHECK_INTERVAL_MS);
 	}
 
