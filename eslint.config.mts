@@ -1,9 +1,9 @@
+import { dirname } from 'path';
 import tseslint from 'typescript-eslint';
-import esbuildSvelte from 'esbuild-svelte';
-import { sveltePreprocess } from 'svelte-preprocess';;
 import obsidianmd from "eslint-plugin-obsidianmd";
 import globals from "globals";
 import { globalIgnores } from "eslint/config";
+
 
 export default tseslint.config(
 	{
@@ -18,12 +18,12 @@ export default tseslint.config(
 						'manifest.json'
 					]
 				},
-				tsconfigRootDir: import.meta.dirname,
+				tsconfigRootDir: dirname(__filename),
 				extraFileExtensions: ['.json']
 			},
 		},
 	},
-	...obsidianmd.configs.recommended,
+	...(obsidianmd.configs?.recommended as any ?? []),
 	globalIgnores([
 		"node_modules",
 		"dist",
